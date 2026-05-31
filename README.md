@@ -2,6 +2,10 @@
 
 An LLM-powered operations co-pilot that lets logistics coordinators query a unified multi-sector operations database in plain English, auto-generates formatted Excel MIS reports, surfaces proactive AI decision alerts, and drafts data-backed escalation emails.
 
+## 🌐 Live Demo
+
+👉 **[opsassist-ds.streamlit.app](https://opsassist-ds.streamlit.app)**
+
 ---
 
 ## 🎯 Key Features
