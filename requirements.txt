@@ -1,0 +1,10 @@
+streamlit
+langchain
+langchain-google-genai
+google-generativeai
+pymysql
+sqlalchemy
+pandas
+openpyxl
+python-dotenv
+faker
