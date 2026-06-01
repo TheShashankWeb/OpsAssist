@@ -437,6 +437,7 @@ if page == "💬 Query Assistant":
     conn = db()
     cur = conn.cursor()
 
+    # ── Current period counts ────────────────────────────────────────────────
     cur.execute(f"SELECT COUNT(*) FROM shipments WHERE 1=1 {sector_filter}")
     total_shipments = cur.fetchone()[0]
 
@@ -455,9 +456,70 @@ if page == "💬 Query Assistant":
         WHERE status='Delayed' {sector_filter}""")
     delayed = cur.fetchone()[0]
 
+    # ── Trend: last 7 days vs previous 7 days ───────────────────────────────
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE dispatch_date >= date('now','-7 days') {sector_filter}""")
+    ships_last7 = cur.fetchone()[0]
+
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE dispatch_date >= date('now','-14 days')
+        AND dispatch_date < date('now','-7 days') {sector_filter}""")
+    ships_prev7 = cur.fetchone()[0]
+
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE status IN ('Delayed','In Transit','Out for Delivery')
+        AND dispatch_date >= date('now','-7 days') {sector_filter}""")
+    undel_last7 = cur.fetchone()[0]
+
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE status IN ('Delayed','In Transit','Out for Delivery')
+        AND dispatch_date >= date('now','-14 days')
+        AND dispatch_date < date('now','-7 days') {sector_filter}""")
+    undel_prev7 = cur.fetchone()[0]
+
+    cur.execute("""SELECT COUNT(*) FROM cold_storage_logs
+        WHERE alert_triggered=1
+        AND recorded_at >= date('now','-7 days')""")
+    cold_last7 = cur.fetchone()[0]
+
+    cur.execute("""SELECT COUNT(*) FROM cold_storage_logs
+        WHERE alert_triggered=1
+        AND recorded_at >= date('now','-14 days')
+        AND recorded_at < date('now','-7 days')""")
+    cold_prev7 = cur.fetchone()[0]
+
+    cur.execute(f"""SELECT ROUND(AVG(tat_hours),1) FROM dispatch_logs
+        WHERE dispatch_time >= date('now','-7 days') {sector_filter}""")
+    tat_last7 = cur.fetchone()[0] or 0.0
+
+    cur.execute(f"""SELECT ROUND(AVG(tat_hours),1) FROM dispatch_logs
+        WHERE dispatch_time >= date('now','-14 days')
+        AND dispatch_time < date('now','-7 days') {sector_filter}""")
+    tat_prev7 = cur.fetchone()[0] or 0.0
+
     conn.close()
 
     delay_pct = round((delayed / total_shipments * 100), 1) if total_shipments > 0 else 0
+
+    # ── Trend delta calculations ─────────────────────────────────────────────
+    def trend(current, previous, label="", inverse=False):
+        """Returns delta string and color direction for st.metric."""
+        if previous == 0:
+            return None, "off"
+        diff = current - previous
+        pct = round((diff / previous) * 100, 1)
+        arrow = "↑" if diff > 0 else "↓"
+        delta_str = f"{arrow} {abs(pct)}% vs last 7d"
+        if inverse:
+            color = "inverse" if diff > 0 else "normal"
+        else:
+            color = "normal" if diff > 0 else "inverse"
+        return delta_str, color
+
+    ship_delta, ship_color = trend(ships_last7, ships_prev7)
+    undel_delta, undel_color = trend(undel_last7, undel_prev7, inverse=True)
+    cold_delta, cold_color = trend(cold_last7, cold_prev7, inverse=True)
+    tat_delta, tat_color = trend(tat_last7, tat_prev7, inverse=True)
 
     # ── KPI Cards ────────────────────────────────────────────────────────────
     k1, k2, k3, k4 = st.columns(4)
@@ -466,28 +528,29 @@ if page == "💬 Query Assistant":
         st.metric(
             label="📦 Total Shipments",
             value=total_shipments,
-            delta=None
+            delta=ship_delta,
+            delta_color=ship_color
         )
     with k2:
         st.metric(
             label="⏳ Undelivered",
             value=undelivered,
-            delta=f"{delay_pct}% delayed",
-            delta_color="inverse"
+            delta=undel_delta if undel_delta else f"{delay_pct}% delayed",
+            delta_color=undel_color
         )
     with k3:
         st.metric(
             label="❄️ Cold Breaches",
             value=cold_breaches,
-            delta="alert triggered" if cold_breaches > 0 else "all clear",
-            delta_color="inverse" if cold_breaches > 0 else "normal"
+            delta=cold_delta if cold_delta else ("alert triggered" if cold_breaches > 0 else "all clear"),
+            delta_color=cold_color if cold_delta else ("inverse" if cold_breaches > 0 else "normal")
         )
     with k4:
         st.metric(
             label="🚛 Avg TAT (hrs)",
             value=f"{avg_tat}h",
-            delta="above SLA" if avg_tat > 48 else "within SLA",
-            delta_color="inverse" if avg_tat > 48 else "normal"
+            delta=tat_delta if tat_delta else ("above SLA" if avg_tat > 48 else "within SLA"),
+            delta_color=tat_color if tat_delta else ("inverse" if avg_tat > 48 else "normal")
         )
 
     st.divider()
