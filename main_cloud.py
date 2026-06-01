@@ -635,17 +635,75 @@ elif page == "🗂️ Audit Trail":
     st.title("🗂️ Audit Trail")
     st.caption("All queries, blocks and errors logged automatically.")
 
+    # ── Load all audit logs ──────────────────────────────────────────────────
     conn = db()
-    df = pd.read_sql_query(
+    df_full = pd.read_sql_query(
         """SELECT user_name, action_type, query_text,
                   result_summary, timestamp, sector
            FROM audit_logs
-           ORDER BY timestamp DESC LIMIT 100""",
+           ORDER BY timestamp DESC LIMIT 500""",
         conn
     )
     conn.close()
 
-    if df.empty:
+    if df_full.empty:
         st.info("No audit logs yet. Use the Query Assistant to generate logs.")
     else:
-        st.dataframe(df, use_container_width=True)
+        # ── Summary KPIs ─────────────────────────────────────────────────────
+        total = len(df_full)
+        queries = len(df_full[df_full["action_type"] == "NL_QUERY"])
+        blocked = len(df_full[df_full["action_type"] == "BLOCKED_QUERY"])
+        errors = len(df_full[df_full["action_type"] == "QUERY_ERROR"])
+
+        a1, a2, a3, a4 = st.columns(4)
+        with a1:
+            st.metric("📋 Total Actions", total)
+        with a2:
+            st.metric("💬 Queries Run", queries)
+        with a3:
+            st.metric("🛡️ Queries Blocked", blocked)
+        with a4:
+            st.metric("❌ Errors", errors)
+
+        st.divider()
+
+        # ── Filters ──────────────────────────────────────────────────────────
+        f1, f2, f3 = st.columns(3)
+
+        with f1:
+            all_actions = ["All"] + sorted(df_full["action_type"].unique().tolist())
+            selected_action = st.selectbox("Filter by Action", all_actions)
+
+        with f2:
+            all_users = ["All"] + sorted(df_full["user_name"].dropna().unique().tolist())
+            selected_user = st.selectbox("Filter by User", all_users)
+
+        with f3:
+            all_sectors = ["All"] + sorted(df_full["sector"].dropna().unique().tolist())
+            selected_sector = st.selectbox("Filter by Sector", all_sectors)
+
+        # ── Apply filters ─────────────────────────────────────────────────────
+        df_filtered = df_full.copy()
+
+        if selected_action != "All":
+            df_filtered = df_filtered[df_filtered["action_type"] == selected_action]
+
+        if selected_user != "All":
+            df_filtered = df_filtered[df_filtered["user_name"] == selected_user]
+
+        if selected_sector != "All":
+            df_filtered = df_filtered[df_filtered["sector"] == selected_sector]
+
+        st.caption(f"Showing {len(df_filtered)} of {total} records")
+
+        # ── Filtered Table ────────────────────────────────────────────────────
+        st.dataframe(df_filtered, use_container_width=True)
+
+        # ── CSV Export ────────────────────────────────────────────────────────
+        csv_audit = df_filtered.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="⬇️ Export Audit Log CSV",
+            data=csv_audit,
+            file_name=f"audit_log_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
