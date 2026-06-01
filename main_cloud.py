@@ -555,6 +555,15 @@ if page == "💬 Query Assistant":
 
     st.divider()
 
+    if not st.session_state.chat_history:
+        st.markdown("""
+        <div style='text-align:center; padding: 2rem 0;'>
+            <div style='font-size:3rem'>💬</div>
+            <h4 style='color:gray'>Ask your first question</h4>
+            <p style='color:gray'>Try: <i>"Show top 5 delayed shipments"</i> or <i>"Which vendor has worst TAT?"</i></p>
+        </div>
+        """, unsafe_allow_html=True)
+
     for entry in st.session_state.chat_history:
         with st.chat_message("user"):
             st.write(entry["question"])
@@ -695,9 +704,15 @@ elif page == "🚨 Alert Feed":
             )
 
     if not st.session_state.alerts:
-        st.info("Click 'Refresh Alerts' to scan for issues.")
+        st.markdown("""
+        <div style='text-align:center; padding: 3rem 0;'>
+            <div style='font-size:3rem'>🚨</div>
+            <h4 style='color:gray'>No alerts loaded yet</h4>
+            <p style='color:gray'>Click <b>Refresh Alerts</b> to scan your operations data for issues.</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.success(f"{len(st.session_state.alerts)} alerts detected.")
+        st.success(f"✅ {len(st.session_state.alerts)} alerts detected across your operations.")
         st.divider()
         colors = {
             "Vendor TAT Decline": "🟠",
@@ -729,8 +744,17 @@ elif page == "📧 Escalation":
                 sector=st.session_state.sector   # ← Sector now wired
             )
 
+    if not st.session_state.escalation_draft:
+        st.markdown("""
+        <div style='text-align:center; padding: 3rem 0;'>
+            <div style='font-size:3rem'>📧</div>
+            <h4 style='color:gray'>No draft generated yet</h4>
+            <p style='color:gray'>Enter recipient name and click <b>Draft Escalation Email</b>.</p>
+        </div>
+        """, unsafe_allow_html=True)
     if st.session_state.escalation_draft:
         d = st.session_state.escalation_draft
+        st.success("✅ Draft ready — review and copy below.")
         st.subheader("📨 Draft Preview")
         st.text_input("Subject", value=d["subject"])
         st.text_area("Body", value=d["body"], height=350)
