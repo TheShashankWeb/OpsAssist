@@ -28,6 +28,8 @@ from app.nl2sql import sql_guard, enforce_limit
 
 # ── Groq client ──────────────────────────────────────────────────────────────
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+import requests as http_requests
+FASTAPI_URL = "http://localhost:8000/api/v1/query"
 
 # ── DB helper ────────────────────────────────────────────────────────────────
 def db():
@@ -310,6 +312,8 @@ if "sector" not in st.session_state:
     st.session_state.sector = "All"
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "api_mode" not in st.session_state:
+    st.session_state.api_mode = False
 if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "login_user" not in st.session_state:
@@ -401,6 +405,11 @@ with st.sidebar:
     st.caption(f"Role: `{st.session_state.user_role}`")
     st.caption(f"Sector: **{st.session_state.sector}**")
     st.caption("v2.0 — SQL Guard Active 🛡️")
+    st.divider()
+    st.session_state.api_mode = st.toggle(
+        "⚡ API Mode", value=False,
+        help="Route queries through FastAPI backend instead of direct DB"
+    )
     st.divider()
     if st.button("🚪 Logout", use_container_width=True):
         _log_audit(st.session_state.login_user, "LOGOUT", "User logged out", "Success", "All")
@@ -496,13 +505,47 @@ if page == "💬 Query Assistant":
     user_query = st.chat_input("e.g. Show top 5 delayed shipments in Logistics sector...")
     if user_query:
         with st.spinner("Thinking..."):
-            df, error, sql = run_nl_query(
-                user_query,
-                sector=st.session_state.sector   # ← Sector now wired
-            )
+            api_mode = st.session_state.get("api_mode", False)
+            if api_mode:
+                try:
+                    resp = http_requests.post(
+                        FASTAPI_URL,
+                        json={
+                            "question": user_query,
+                            "sector": st.session_state.sector,
+                            "user": st.session_state.user_name
+                        },
+                        timeout=30
+                    )
+                    result = resp.json()
+                    if result.get("blocked"):
+                        df = pd.DataFrame()
+                        error = result.get("error", "Query blocked.")
+                        sql = result.get("sql", "")
+                    elif result.get("error"):
+                        df = pd.DataFrame()
+                        error = result["error"]
+                        sql = result.get("sql", "")
+                    else:
+                        df = pd.DataFrame(result["data"])
+                        error = None
+                        sql = result["sql"]
+                    mode_label = "⚡ via FastAPI"
+                except Exception as e:
+                    df = pd.DataFrame()
+                    error = f"FastAPI unreachable: {str(e)}"
+                    sql = ""
+                    mode_label = "⚡ via FastAPI"
+            else:
+                df, error, sql = run_nl_query(
+                    user_query,
+                    sector=st.session_state.sector
+                )
+                mode_label = "🗄️ via Direct DB"
         with st.chat_message("user"):
             st.write(user_query)
         with st.chat_message("assistant"):
+            st.caption(f"Mode: {mode_label}")
             if error:
                 st.error(f"{error}")
             else:
