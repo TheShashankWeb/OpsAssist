@@ -143,17 +143,25 @@ def _log_audit(user, action, query, result, sector):
 
 
 # ── Alert Engine (SQLite version) ────────────────────────────────────────────
-def get_alerts(sector: str = "All"):
+def get_alerts(
+    sector: str = "All",
+    tat_threshold: int = 48,
+    ageing_days: int = 7,
+    min_stock: int = 50,
+    max_qty_out: int = 10
+):
+    """
+    Detects 4 types of operational alerts with configurable thresholds.
+    """
     alerts = []
     conn = db()
-
     sector_filter = f"AND sector = '{sector}'" if sector != "All" else ""
 
-    # Vendor TAT Decline
+    # ── Vendor TAT Decline ───────────────────────────────────────────────────
     df = pd.read_sql_query(f"""
         SELECT driver_name, ROUND(AVG(tat_hours),1) as avg_tat, sector
         FROM dispatch_logs
-        WHERE tat_hours > 48 {sector_filter}
+        WHERE tat_hours > {tat_threshold} {sector_filter}
         GROUP BY driver_name, sector
         ORDER BY avg_tat DESC LIMIT 5
     """, conn)
@@ -162,10 +170,10 @@ def get_alerts(sector: str = "All"):
             "type": "Vendor TAT Decline",
             "vendor": r["driver_name"],
             "sector": r["sector"],
-            "message": f"Driver {r['driver_name']} averaging {r['avg_tat']} hrs TAT — exceeds 48hr SLA."
+            "message": f"Driver {r['driver_name']} averaging {r['avg_tat']} hrs TAT — exceeds {tat_threshold}hr SLA."
         })
 
-    # Cold Storage Breach
+    # ── Cold Storage Breach ──────────────────────────────────────────────────
     df = pd.read_sql_query("""
         SELECT zone_name, temperature, humidity, recorded_at
         FROM cold_storage_logs
@@ -180,13 +188,13 @@ def get_alerts(sector: str = "All"):
             "message": f"Zone {r['zone_name']} breached: {r['temperature']}°C / {r['humidity']}% humidity."
         })
 
-    # Shipment Ageing
+    # ── Shipment Ageing ──────────────────────────────────────────────────────
     df = pd.read_sql_query(f"""
         SELECT tracking_number, origin_city, destination_city, sector,
                CAST((julianday('now') - julianday(dispatch_date)) AS INTEGER) as days_in_transit
         FROM shipments
         WHERE status NOT IN ('Delivered','Cancelled')
-        AND CAST((julianday('now') - julianday(dispatch_date)) AS INTEGER) > 7
+        AND CAST((julianday('now') - julianday(dispatch_date)) AS INTEGER) > {ageing_days}
         {sector_filter}
         ORDER BY days_in_transit DESC LIMIT 5
     """, conn)
@@ -198,11 +206,12 @@ def get_alerts(sector: str = "All"):
             "message": f"Shipment {r['tracking_number']} stuck {r['days_in_transit']} days — {r['origin_city']} to {r['destination_city']}."
         })
 
-    # Slow-Moving SKUs
+    # ── Slow-Moving SKUs ─────────────────────────────────────────────────────
     df = pd.read_sql_query(f"""
         SELECT sku_code, product_name, sector, current_stock, quantity_out
         FROM inventory
-        WHERE current_stock > 50 AND quantity_out < 10 {sector_filter}
+        WHERE current_stock > {min_stock} AND quantity_out < {max_qty_out}
+        {sector_filter}
         ORDER BY current_stock DESC LIMIT 5
     """, conn)
     for _, r in df.iterrows():
@@ -537,10 +546,46 @@ elif page == "🚨 Alert Feed":
         f"Sector filter: **{st.session_state.sector}**"
     )
 
+    # ── Threshold Configuration ───────────────────────────────────────────
+    with st.expander("⚙️ Configure Alert Thresholds", expanded=False):
+        th_col1, th_col2 = st.columns(2)
+        with th_col1:
+            tat_threshold = st.slider(
+                "🚛 TAT Breach Threshold (hours)",
+                min_value=12, max_value=96,
+                value=48, step=4,
+                help="Flag drivers/vendors with avg TAT above this value"
+            )
+            ageing_days = st.slider(
+                "📦 Shipment Ageing (days)",
+                min_value=1, max_value=30,
+                value=7, step=1,
+                help="Flag shipments in transit longer than this many days"
+            )
+        with th_col2:
+            min_stock = st.slider(
+                "📊 Min Stock for Slow SKU",
+                min_value=10, max_value=200,
+                value=50, step=10,
+                help="Only flag SKUs with stock above this value"
+            )
+            max_qty_out = st.slider(
+                "📉 Max Qty Moved Out",
+                min_value=1, max_value=50,
+                value=10, step=1,
+                help="Flag SKUs where qty moved out is below this value"
+            )
+
+    st.divider()
+
     if st.button("🔄 Refresh Alerts"):
         with st.spinner("Scanning operations data..."):
             st.session_state.alerts = get_alerts(
-                sector=st.session_state.sector  # ← Sector now wired
+                sector=st.session_state.sector,
+                tat_threshold=tat_threshold,
+                ageing_days=ageing_days,
+                min_stock=min_stock,
+                max_qty_out=max_qty_out
             )
 
     if not st.session_state.alerts:
