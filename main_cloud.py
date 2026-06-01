@@ -299,7 +299,71 @@ if "user_name" not in st.session_state:
     st.session_state.user_name = "Coordinator"
 if "sector" not in st.session_state:
     st.session_state.sector = "All"
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None
+if "login_user" not in st.session_state:
+    st.session_state.login_user = None
 
+
+# ── Login Gate ────────────────────────────────────────────────────────────────
+import hashlib
+
+def verify_login(username: str, password: str) -> dict | None:
+    """Check credentials against users table. Returns user dict or None."""
+    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    conn = db()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT username, role, full_name FROM users WHERE username=? AND password_hash=?",
+        (username, pwd_hash)
+    )
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {"username": row[0], "role": row[1], "full_name": row[2]}
+    return None
+
+
+def show_login_page():
+    """Renders the login screen."""
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("https://img.icons8.com/fluency/96/truck.png", width=80)
+        st.title("OpsAssist")
+        st.caption("AI-Powered Operations Co-pilot v2.0")
+        st.divider()
+        st.subheader("🔐 Login")
+
+        username = st.text_input("Username", placeholder="Enter username")
+        password = st.text_input("Password", type="password", placeholder="Enter password")
+
+        if st.button("Login", use_container_width=True, type="primary"):
+            if not username or not password:
+                st.warning("Please enter both username and password.")
+            else:
+                user = verify_login(username.strip(), password.strip())
+                if user:
+                    st.session_state.logged_in = True
+                    st.session_state.login_user = user["username"]
+                    st.session_state.user_name = user["full_name"]
+                    st.session_state.user_role = user["role"]
+                    _log_audit(user["username"], "LOGIN", "User logged in", "Success", "All")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password.")
+                    _log_audit(username, "LOGIN_FAILED", "Failed login attempt", "Failed", "All")
+
+        st.divider()
+        st.caption("Default credentials for demo:")
+        st.code("admin / admin123\ncoordinator / coord123\nviewer / view123")
+
+
+# Show login page if not authenticated
+if not st.session_state.logged_in:
+    show_login_page()
+    st.stop()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -323,8 +387,18 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     st.divider()
+    st.divider()
+    st.caption(f"👤 **{st.session_state.user_name}**")
+    st.caption(f"Role: `{st.session_state.user_role}`")
     st.caption(f"Sector: **{st.session_state.sector}**")
     st.caption("v2.0 — SQL Guard Active 🛡️")
+    st.divider()
+    if st.button("🚪 Logout", use_container_width=True):
+        _log_audit(st.session_state.login_user, "LOGOUT", "User logged out", "Success", "All")
+        for key in ["logged_in", "login_user", "user_name", "user_role",
+                    "chat_history", "alerts", "escalation_draft"]:
+            st.session_state[key] = None if key not in ["logged_in"] else False
+        st.rerun()
 
 
 # ── Page: Query Assistant ─────────────────────────────────────────────────────

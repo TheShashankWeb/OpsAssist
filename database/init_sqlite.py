@@ -91,7 +91,32 @@ def init_db():
         user_name TEXT, action_type TEXT, query_text TEXT,
         result_summary TEXT, timestamp TEXT, sector TEXT
     );
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL,
+        full_name TEXT,
+        created_at TEXT
+    );
     """)
+
+    # Seed default users
+    import hashlib
+    def _hash(pwd):
+        return hashlib.sha256(pwd.encode()).hexdigest()
+
+    default_users = [
+        ("admin",       _hash("admin123"),  "admin",       "Admin User",        datetime.now().strftime("%Y-%m-%d")),
+        ("coordinator", _hash("coord123"),  "coordinator", "Ops Coordinator",   datetime.now().strftime("%Y-%m-%d")),
+        ("viewer",      _hash("view123"),   "viewer",      "Read-Only Viewer",  datetime.now().strftime("%Y-%m-%d")),
+    ]
+    cur.executemany(
+        """INSERT OR IGNORE INTO users
+           (username, password_hash, role, full_name, created_at)
+           VALUES (?,?,?,?,?)""",
+        default_users
+    )
 
     # Seed vendors
     cur.executemany(
