@@ -410,6 +410,70 @@ if page == "💬 Query Assistant":
         f"SQL Guard: 🛡️ Active"
     )
 
+    # ── KPI Dashboard ────────────────────────────────────────────────────────
+    sector_filter = (
+        f"AND sector = '{st.session_state.sector}'"
+        if st.session_state.sector != "All" else ""
+    )
+
+    conn = db()
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT COUNT(*) FROM shipments WHERE 1=1 {sector_filter}")
+    total_shipments = cur.fetchone()[0]
+
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE status IN ('Delayed','In Transit','Out for Delivery')
+        {sector_filter}""")
+    undelivered = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM cold_storage_logs WHERE alert_triggered=1")
+    cold_breaches = cur.fetchone()[0]
+
+    cur.execute(f"SELECT ROUND(AVG(tat_hours),1) FROM dispatch_logs WHERE 1=1 {sector_filter}")
+    avg_tat = cur.fetchone()[0] or 0.0
+
+    cur.execute(f"""SELECT COUNT(*) FROM shipments
+        WHERE status='Delayed' {sector_filter}""")
+    delayed = cur.fetchone()[0]
+
+    conn.close()
+
+    delay_pct = round((delayed / total_shipments * 100), 1) if total_shipments > 0 else 0
+
+    # ── KPI Cards ────────────────────────────────────────────────────────────
+    k1, k2, k3, k4 = st.columns(4)
+
+    with k1:
+        st.metric(
+            label="📦 Total Shipments",
+            value=total_shipments,
+            delta=None
+        )
+    with k2:
+        st.metric(
+            label="⏳ Undelivered",
+            value=undelivered,
+            delta=f"{delay_pct}% delayed",
+            delta_color="inverse"
+        )
+    with k3:
+        st.metric(
+            label="❄️ Cold Breaches",
+            value=cold_breaches,
+            delta="alert triggered" if cold_breaches > 0 else "all clear",
+            delta_color="inverse" if cold_breaches > 0 else "normal"
+        )
+    with k4:
+        st.metric(
+            label="🚛 Avg TAT (hrs)",
+            value=f"{avg_tat}h",
+            delta="above SLA" if avg_tat > 48 else "within SLA",
+            delta_color="inverse" if avg_tat > 48 else "normal"
+        )
+
+    st.divider()
+
     for entry in st.session_state.chat_history:
         with st.chat_message("user"):
             st.write(entry["question"])
