@@ -48,13 +48,51 @@ def get_conn():
 
 
 def init_db():
-    if os.path.exists(DB_PATH):
-        print(f"SQLite DB already exists at {DB_PATH}")
-        return
-
-    print("Creating SQLite database...")
+    """
+    Creates DB and seeds data if it doesn't exist.
+    Also ensures users table exists on older DBs (safe migration).
+    """
     conn = get_conn()
     cur = conn.cursor()
+
+    # ── Safe migration: ensure users table always exists ────────────────────
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL,
+            full_name TEXT,
+            created_at TEXT
+        )
+    """)
+
+    # ── Seed default users if table is empty ────────────────────────────────
+    import hashlib
+    def _hash(pwd):
+        return hashlib.sha256(pwd.encode()).hexdigest()
+
+    cur.execute("SELECT COUNT(*) FROM users")
+    if cur.fetchone()[0] == 0:
+        default_users = [
+            ("admin",       _hash("admin123"),  "admin",
+             "Admin User",       datetime.now().strftime("%Y-%m-%d")),
+            ("coordinator", _hash("coord123"),  "coordinator",
+             "Ops Coordinator",  datetime.now().strftime("%Y-%m-%d")),
+            ("viewer",      _hash("view123"),   "viewer",
+             "Read-Only Viewer", datetime.now().strftime("%Y-%m-%d")),
+        ]
+        cur.executemany(
+            """INSERT OR IGNORE INTO users
+               (username, password_hash, role, full_name, created_at)
+               VALUES (?,?,?,?,?)""",
+            default_users
+        )
+        print("Default users seeded.")
+
+    conn.commit()
+
+    print("Creating and seeding SQLite database...")
 
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS vendors (
@@ -100,6 +138,13 @@ def init_db():
         created_at TEXT
     );
     """)
+
+    # ── Skip full seed if DB already has data ────────────────────────────────
+    cur.execute("SELECT COUNT(*) FROM vendors")
+    if cur.fetchone()[0] > 0:
+        conn.close()
+        print(f"Tables exist, skipping seed.")
+        return
 
     # Seed default users
     import hashlib
