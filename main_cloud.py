@@ -395,8 +395,8 @@ with st.sidebar:
     st.divider()
     page = st.radio(
         "Go to",
-        ["💬 Query Assistant", "🚨 Alert Feed",
-         "📧 Escalation", "🗂️ Audit Trail"],
+        ["💬 Query Assistant", "📈 Charts",
+         "🚨 Alert Feed", "📧 Escalation", "🗂️ Audit Trail"],
         label_visibility="collapsed"
     )
     st.divider()
@@ -813,3 +813,94 @@ elif page == "🗂️ Audit Trail":
             file_name=f"audit_log_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv"
         )
+
+# ── Page: Charts ─────────────────────────────────────────────────────────────
+elif page == "📈 Charts":
+    st.title("📈 Operations Charts")
+    st.caption(
+        f"Pre-built visual reports. "
+        f"Sector filter: **{st.session_state.sector}**"
+    )
+
+    sector_filter = (
+        f"AND sector = '{st.session_state.sector}'"
+        if st.session_state.sector != "All" else ""
+    )
+
+    conn = db()
+
+    # ── Chart 1: Shipment Status Breakdown ───────────────────────────────────
+    st.subheader("📦 Shipment Status Breakdown")
+    df_status = pd.read_sql_query(f"""
+        SELECT status, COUNT(*) as count
+        FROM shipments
+        WHERE 1=1 {sector_filter}
+        GROUP BY status
+        ORDER BY count DESC
+    """, conn)
+
+    if not df_status.empty:
+        st.bar_chart(df_status.set_index("status"))
+        col1, col2 = st.columns(2)
+        with col1:
+            st.dataframe(df_status, use_container_width=True)
+        with col2:
+            total = df_status["count"].sum()
+            for _, row in df_status.iterrows():
+                pct = round(row["count"] / total * 100, 1)
+                st.write(f"**{row['status']}** — {row['count']} shipments ({pct}%)")
+    else:
+        st.info("No shipment data available.")
+
+    st.divider()
+
+    # ── Chart 2: Top 10 Vendors by Avg TAT ───────────────────────────────────
+    st.subheader("🚛 Top 10 Vendors by Avg TAT (hours)")
+    st.caption("Higher TAT = slower delivery = needs attention")
+
+    df_tat = pd.read_sql_query(f"""
+        SELECT v.vendor_name,
+               ROUND(AVG(d.tat_hours), 1) as avg_tat,
+               COUNT(d.dispatch_id) as total_dispatches
+        FROM dispatch_logs d
+        JOIN shipments s ON d.shipment_id = s.shipment_id
+        JOIN vendors v ON s.vendor_id = v.vendor_id
+        WHERE 1=1 {sector_filter}
+        GROUP BY v.vendor_name
+        ORDER BY avg_tat DESC
+        LIMIT 10
+    """, conn)
+
+    if not df_tat.empty:
+        st.bar_chart(df_tat.set_index("vendor_name")["avg_tat"])
+        st.dataframe(df_tat, use_container_width=True)
+    else:
+        st.info("No dispatch data available.")
+
+    st.divider()
+
+    # ── Chart 3: Cold Storage Temperature by Zone ────────────────────────────
+    st.subheader("❄️ Cold Storage — Avg Temperature by Zone")
+    st.caption("Zones above -2°C or below -22°C are at risk")
+
+    df_cold = pd.read_sql_query("""
+        SELECT zone_name,
+               ROUND(AVG(temperature), 2) as avg_temp,
+               ROUND(MIN(temperature), 2) as min_temp,
+               ROUND(MAX(temperature), 2) as max_temp,
+               SUM(CASE WHEN alert_triggered=1 THEN 1 ELSE 0 END) as total_breaches
+        FROM cold_storage_logs
+        GROUP BY zone_name
+        ORDER BY avg_temp DESC
+    """, conn)
+
+    if not df_cold.empty:
+        st.bar_chart(df_cold.set_index("zone_name")["avg_temp"])
+        st.dataframe(df_cold, use_container_width=True)
+    else:
+        st.info("No cold storage data available.")
+
+    conn.close()
+
+    st.divider()
+    st.caption("💡 Use Query Assistant for custom charts on any question.")
