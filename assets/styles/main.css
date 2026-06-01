@@ -341,3 +341,22 @@ hr {
     font-size: 1.5rem !important;
   }
 }
+
+/* ── Logo ────────────────────────────────────────────────── */
+[data-testid="stImage"] img {
+  filter: brightness(0.95);
+  border-radius: var(--radius-md);
+}
+
+/* Logo in sidebar — smaller, centered */
+[data-testid="stSidebar"] [data-testid="stImage"] img {
+  display: block;
+  margin: 0 auto 0.5rem auto;
+  max-width: 150px;
+}
+
+/* Logo in login page */
+.login-logo [data-testid="stImage"] img {
+  max-width: 200px;
+  margin: 0 auto;
+}

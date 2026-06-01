@@ -356,9 +356,8 @@ def show_login_page():
     """Renders the login screen."""
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("https://img.icons8.com/fluency/96/truck.png", width=80)
-        st.title("OpsAssist")
-        st.caption("AI-Powered Operations Co-pilot v2.0")
+        st.image("assets/images/logo.png", width=220)
+        st.caption("Intelligent Operations Platform v2.0")
         st.divider()
         st.subheader("🔐 Login")
 
@@ -393,9 +392,7 @@ if not st.session_state.logged_in:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/truck.png", width=60)
-    st.title("OpsAssist")
-    st.caption("AI-Powered Operations Co-pilot v2.0")
+    st.image("assets/images/logo.png", width=160)
     st.divider()
     st.session_state.user_name = st.text_input(
         "Your Name", value=st.session_state.user_name
