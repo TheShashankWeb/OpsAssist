@@ -15,6 +15,8 @@ def load_css():
     if os.path.exists(css_path):
         with open(css_path, encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    from assets.components import COMPONENT_CSS
+    st.markdown(f"<style>{COMPONENT_CSS}</style>", unsafe_allow_html=True)
 
 import pandas as pd
 import sqlite3
@@ -23,6 +25,10 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+from assets.components import (
+    page_header, kpi_card, alert_card,
+    badge, section_header, info_banner, stat_row
+)
 load_css()
 
 # ── Init SQLite DB ───────────────────────────────────────────────────────────
