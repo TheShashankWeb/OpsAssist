@@ -435,6 +435,18 @@ if page == "💬 Query Assistant":
             else:
                 st.dataframe(df, use_container_width=True)
                 st.code(sql, language="sql")
+
+                # ── CSV Export ───────────────────────────────────────────
+                csv_data = df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="⬇️ Download CSV",
+                    data=csv_data,
+                    file_name=f"opsassist_result_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key=f"csv_{pd.Timestamp.now().strftime('%H%M%S%f')}"
+                )
+
+                # ── Bar Chart ────────────────────────────────────────────
                 numeric_cols = df.select_dtypes(include="number").columns.tolist()
                 if len(df) > 1 and len(numeric_cols) > 0 and df.columns[0] != numeric_cols[0]:
                     st.bar_chart(
