@@ -10,6 +10,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+def load_css():
+    css_path = os.path.join(os.path.dirname(__file__), "assets", "styles", "main.css")
+    if os.path.exists(css_path):
+        with open(css_path, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 import pandas as pd
 import sqlite3
 from groq import Groq
@@ -17,6 +23,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+load_css()
 
 # ── Init SQLite DB ───────────────────────────────────────────────────────────
 from database.init_sqlite import init_db, DB_PATH

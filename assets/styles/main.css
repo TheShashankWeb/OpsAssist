@@ -1,0 +1,343 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary:     #0F172A;
+  --bg-surface:     #1E293B;
+  --bg-surface2:    #263348;
+  --bg-card:        #1E293B;
+  --border:         #334155;
+  --border-light:   #3D4F6B;
+  --teal:           #0EA5E9;
+  --teal-dark:      #0284C7;
+  --teal-glow:      rgba(14,165,233,0.15);
+  --navy:           #1E3A5F;
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
+  --success:        #10B981;
+  --success-bg:     rgba(16,185,129,0.12);
+  --warning:        #F59E0B;
+  --warning-bg:     rgba(245,158,11,0.12);
+  --danger:         #EF4444;
+  --danger-bg:      rgba(239,68,68,0.12);
+  --info:           #0EA5E9;
+  --info-bg:        rgba(14,165,233,0.12);
+  --radius-sm:      6px;
+  --radius-md:      10px;
+  --radius-lg:      14px;
+  --radius-xl:      20px;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.4);
+  --shadow-glow:    0 0 20px rgba(14,165,233,0.15);
+  --font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body, [class*="css"] {
+  font-family: var(--font) !important;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+header { visibility: hidden; }
+.stDeployButton { display: none; }
+[data-testid="stToolbar"] { display: none; }
+[data-testid="stDecoration"] { display: none; }
+.viewerBadge_container__1QSob { display: none; }
+
+.stApp {
+  background: linear-gradient(135deg, #0F172A 0%, #0D1B2E 50%, #0F172A 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.main .block-container {
+  padding: 2rem 2.5rem 3rem 2.5rem !important;
+  max-width: 1400px !important;
+}
+
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #1A2744 0%, #162035 100%) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+  padding: 1.5rem 1rem !important;
+}
+
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label {
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+}
+
+[data-testid="stSidebar"] .stRadio > div {
+  gap: 4px !important;
+}
+
+[data-testid="stSidebar"] .stRadio label {
+  background: transparent !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.55rem 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+[data-testid="stSidebar"] .stRadio label:hover {
+  background: rgba(14,165,233,0.08) !important;
+  color: var(--teal) !important;
+}
+
+[data-testid="stSidebar"] hr {
+  border-color: var(--border) !important;
+  margin: 0.75rem 0 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h1 { font-size: 1.75rem !important; }
+h2 { font-size: 1.35rem !important; }
+h3 { font-size: 1.1rem  !important; }
+
+[data-testid="stMetric"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1.25rem 1.5rem !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+[data-testid="stMetric"]:hover {
+  box-shadow: var(--shadow-glow) !important;
+  border-color: var(--teal) !important;
+}
+
+[data-testid="stMetricLabel"] {
+  color: var(--text-secondary) !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+[data-testid="stMetricValue"] {
+  color: var(--text-primary) !important;
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+[data-testid="stMetricDelta"] {
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+}
+
+.stButton > button {
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.55rem 1.4rem !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+  font-family: var(--font) !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 2px 8px rgba(14,165,233,0.3) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.stButton > button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(14,165,233,0.4) !important;
+}
+
+.stButton > button:active {
+  transform: translateY(0px) !important;
+}
+
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+  background: var(--bg-surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font) !important;
+  font-size: 0.9rem !important;
+  padding: 0.6rem 0.9rem !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 2px var(--teal-glow) !important;
+}
+
+.stSelectbox > div > div {
+  background: var(--bg-surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-testid="stDataFrame"] {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border) !important;
+}
+
+[data-testid="stDataFrame"] thead tr th {
+  background: var(--bg-surface2) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.stCodeBlock {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border) !important;
+  background: #0D1117 !important;
+}
+
+.streamlit-expanderHeader {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+.streamlit-expanderContent {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+}
+
+.stAlert {
+  border-radius: var(--radius-md) !important;
+  border-left-width: 4px !important;
+  font-size: 0.88rem !important;
+}
+
+.stSlider > div > div > div {
+  background: var(--teal) !important;
+}
+
+.stCheckbox > label,
+.stToggle > label {
+  color: var(--text-secondary) !important;
+  font-size: 0.88rem !important;
+}
+
+hr {
+  border-color: var(--border) !important;
+  margin: 1.5rem 0 !important;
+}
+
+[data-testid="stChatInput"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+[data-testid="stChatInput"]:focus-within {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 2px var(--teal-glow) !important;
+}
+
+[data-testid="stChatMessage"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.stSpinner > div {
+  border-top-color: var(--teal) !important;
+}
+
+.stDownloadButton > button {
+  background: var(--bg-surface2) !important;
+  color: var(--teal) !important;
+  border: 1px solid var(--teal) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.stDownloadButton > button:hover {
+  background: var(--teal-glow) !important;
+  box-shadow: 0 2px 8px rgba(14,165,233,0.3) !important;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
+.stCaption, [data-testid="stCaptionContainer"] {
+  color: var(--text-muted) !important;
+  font-size: 0.78rem !important;
+}
+
+.glass-card {
+  background: rgba(30,41,59,0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pill-success { background: var(--success-bg); color: var(--success); }
+.pill-warning { background: var(--warning-bg); color: var(--warning); }
+.pill-danger  { background: var(--danger-bg);  color: var(--danger);  }
+.pill-info    { background: var(--info-bg);    color: var(--info);    }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.fade-in {
+  animation: fadeInUp 0.35s ease forwards;
+}
+
+@media (max-width: 768px) {
+  .main .block-container {
+    padding: 1rem 1rem 2rem 1rem !important;
+  }
+  [data-testid="stMetricValue"] {
+    font-size: 1.5rem !important;
+  }
+}
